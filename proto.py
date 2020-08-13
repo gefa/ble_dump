@@ -114,5 +114,5 @@ def write_pcap(fd, ble_channel, ble_access_address, ble_data):
   fd.write(pack('<LLLLBBBBLHL', sec, usec, ble_len, ble_len, ble_channel, 0xff, 0xff, 0x00, ble_access_address, ble_flags, ble_access_address))
 
   # Write BLE packet
-  fd.write(''.join(chr(x) for x in ble_data))
+  fd.write(bytes(ble_data))
   fd.flush()

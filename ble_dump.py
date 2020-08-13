@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 #
 #  ble-dump: SDR Bluetooth LE packet dumper
 #
@@ -15,32 +15,33 @@ from optparse import OptionParser, OptionGroup
 from gnuradio.eng_option import eng_option
 from datetime import datetime, timedelta
 from proto import *
+import zmq
 
-# Print current Gnu Radio capture settings
+# print(current Gnu Radio capture settings)
 def print_settings(gr, opts):
-  print '\n ble-dump:  SDR Bluetooth LE packet dumper'
-  print '\nCapture settings:'
-  print ' %-22s: %s Hz' % ('Base Frequency', '{:d}'.format(int(gr.get_ble_base_freq())))
-  print ' %-22s: %s Hz' % ('Sample rate', '{:d}'.format(int(gr.get_sample_rate())))
-  print ' %-22s: %s dB' % ('Squelch threshold', '{:d}'.format(int(gr.get_squelch_threshold())))
+  print('\n ble-dump:  SDR Bluetooth LE packet dumper')
+  print('\nCapture settings:')
+  print(' %-22s: %s Hz' % ('Base Frequency', '{:d}'.format(int(gr.get_ble_base_freq()))))
+  print(' %-22s: %s Hz' % ('Sample rate', '{:d}'.format(int(gr.get_sample_rate()))))
+  print(' %-22s: %s dB' % ('Squelch threshold', '{:d}'.format(int(gr.get_squelch_threshold()))))
 
-  print '\nLow-pass filter:'
-  print ' %-22s: %s Hz' % ('Cutoff frequency', '{:d}'.format(int(gr.get_cutoff_freq())))
-  print ' %-22s: %s Hz' % ('Transition width', '{:d}'.format(int(gr.get_transition_width())))
+  print('\nLow-pass filter:')
+  print(' %-22s: %s Hz' % ('Cutoff frequency', '{:d}'.format(int(gr.get_cutoff_freq()))))
+  print(' %-22s: %s Hz' % ('Transition width', '{:d}'.format(int(gr.get_transition_width()))))
 
-  print '\nGMSK demodulation:'
-  print ' %-22s: %s' % ('Samples per Symbol', '{:.4f}'.format(gr.get_gmsk_sps()))
-  print ' %-22s: %s' % ('Gain Mu', '{:.4f}'.format(gr.get_gmsk_gain_mu()))
-  print ' %-22s: %s' % ('Mu', '{:,}'.format(gr.get_gmsk_mu()))
-  print ' %-22s: %s' % ('Omega Limit', '{:.4f}'.format(gr.get_gmsk_omega_limit()))
+  print('\nGMSK demodulation:')
+  print(' %-22s: %s' % ('Samples per Symbol', '{:.4f}'.format(gr.get_gmsk_sps())))
+  print(' %-22s: %s' % ('Gain Mu', '{:.4f}'.format(gr.get_gmsk_gain_mu())))
+  print(' %-22s: %s' % ('Mu', '{:,}'.format(gr.get_gmsk_mu())))
+  print(' %-22s: %s' % ('Omega Limit', '{:.4f}'.format(gr.get_gmsk_omega_limit())))
 
-  print '\nBluetooth LE:'
-  print ' %-22s: %s' % ('Scanning Channels', '{:s}'.format(opts.current_ble_channels.replace(',', ', ')))
-  print ' %-22s: %ss' % ('Scanning Window', '{:.2f}'.format(opts.ble_scan_window))
-  print ' %-22s: %s' % ('Disable CRC check', '{0}'.format(opts.disable_crc))
-  print ' %-22s: %s' % ('Disable De-Whitening', '{0}'.format(opts.disable_dewhitening))
+  print('\nBluetooth LE:')
+  print(' %-22s: %s' % ('Scanning Channels', '{:s}'.format(opts.current_ble_channels.replace(',', ', '))))
+  print(' %-22s: %ss' % ('Scanning Window', '{:.2f}'.format(opts.ble_scan_window)))
+  print(' %-22s: %s' % ('Disable CRC check', '{0}'.format(opts.disable_crc)))
+  print(' %-22s: %s' % ('Disable De-Whitening', '{0}'.format(opts.disable_dewhitening)))
 
-  print '\n%-23s: %s\n' % ('PCAP output file', '{:s}'.format(opts.pcap_file))
+  print('\n%-23s: %s\n' % ('PCAP output file', '{:s}'.format(opts.pcap_file)))
 
 # Setup Gnu Radio with defined command line arguments
 def init_args(gr, opts):
@@ -101,7 +102,7 @@ if __name__ == '__main__':
   (opts, args) = init_opts(gr_block)
 
   if not opts.pcap_file:
-    print '\nerror: please specify pcap output file (-p)'
+    print('\nerror: please specify pcap output file (-p)')
     exit(1)
 
   # Verify BLE channels argument
@@ -130,8 +131,11 @@ if __name__ == '__main__':
   # Prepare Gnu Radio receive buffers
   gr_buffer = ''
   lost_data = ''
-
-  print 'Capturing on BLE channel [ {:d} ] @ {:d} MHz'.format(current_ble_chan, int(gr_block.get_freq() / 1000000))
+  socket_str = "tcp://127.0.0.1:5557"
+  context = zmq.Context()
+  results_receiver = context.socket(zmq.PULL)
+  results_receiver.connect(socket_str)
+  print('Capturing on BLE channel [ {:d} ] @ {:d} MHz'.format(current_ble_chan, int(gr_block.get_freq() / 1000000)))
 
   try:
     while True:
@@ -141,11 +145,10 @@ if __name__ == '__main__':
         gr_block.set_ble_channel(BLE_CHANS[current_ble_chan])
         hopping_time = datetime.now() + timedelta(seconds=opts.ble_scan_window)
         current_hop +=1
-        print 'Switching to BLE channel [ {:d} ] @ {:d} MHz'.format(current_ble_chan, int(gr_block.get_freq() / 1000000))
+        print('Switching to BLE channel [ {:d} ] @ {:d} MHz'.format(current_ble_chan, int(gr_block.get_freq() / 1000000)))
 
       # Fetch data from Gnu Radio message queue
-      gr_buffer += gr_block.message_queue.delete_head().to_string()
-
+      gr_buffer +=  results_receiver.recv().decode('latin1')
       if len(gr_buffer) > opts.min_buffer_size:
         # Prepend lost data
         if len(lost_data) > 0:
@@ -161,7 +164,7 @@ if __name__ == '__main__':
             continue
 
           # Extract BLE Access Address
-          ble_access_address = unpack('I', gr_buffer[pos:pos + BLE_ADDR_LEN])[0]
+          ble_access_address = unpack('I', bytes(gr_buffer[pos:pos + BLE_ADDR_LEN], 'latin1'))[0]
           pos += BLE_ADDR_LEN
 
           # Dewhitening received BLE Header
