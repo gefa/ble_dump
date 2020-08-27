@@ -10,7 +10,7 @@ options:
     gen_linking: dynamic
     generate_options: no_gui
     hier_block_src_path: '.:'
-    id: gr_ble
+    id: gr_ble_zig
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -21,7 +21,7 @@ options:
     run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: ble_receiver
+    title: ble_zigbee_multi-channel_receiver
     window_size: ''
   states:
     bus_sink: false
@@ -36,7 +36,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: int(2402e6)
+    value: int(2405e6)
   states:
     bus_sink: false
     bus_source: false
@@ -53,19 +53,19 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [82, 372]
+    coordinate: [81, 371]
     rotation: 0
     state: true
 - name: ble_channel_spacing
   id: variable
   parameters:
     comment: ''
-    value: 2e6
+    value: 5e6
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [190, 391]
+    coordinate: [189, 391]
     rotation: 0
     state: true
 - name: cutoff_freq
@@ -96,7 +96,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: -1.5e6
+    value: -1.5e6*0
   states:
     bus_sink: false
     bus_source: false
@@ -181,7 +181,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '-70'
+    value: '-85'
   states:
     bus_sink: false
     bus_source: false
@@ -256,7 +256,7 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    append: 'False'
+    append: 'True'
     comment: ''
     file: /tmp/sensor.pcap
     type: byte
@@ -388,7 +388,7 @@ blocks:
     bus_structure: null
     coordinate: [575, 277]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: digital_clock_recovery_mm_xx_0
   id: digital_clock_recovery_mm_xx
   parameters:
@@ -407,7 +407,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [624, 576]
+    coordinate: [623, 576]
     rotation: 0
     state: enabled
 - name: digital_correlate_access_code_bb_0
@@ -467,7 +467,7 @@ blocks:
     bus_structure: null
     coordinate: [602, 160]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: epy_block_0
   id: epy_block
   parameters:
@@ -524,7 +524,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [608, 508]
+    coordinate: [607, 508]
     rotation: 0
     state: true
 - name: freq_xlating_fir_filter_xxx_0
@@ -546,7 +546,7 @@ blocks:
     bus_structure: null
     coordinate: [344, 149]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: freq_xlating_fir_filter_xxx_0_0
   id: freq_xlating_fir_filter_xxx
   parameters:
@@ -566,7 +566,7 @@ blocks:
     bus_structure: null
     coordinate: [79, 500]
     rotation: 0
-    state: enabled
+    state: disabled
 - name: ieee802_15_4_packet_sink_0
   id: ieee802_15_4_packet_sink
   parameters:
@@ -842,7 +842,7 @@ blocks:
     bw7: '0'
     bw8: '0'
     bw9: '0'
-    center_freq0: freq-freq_offset
+    center_freq0: freq+freq_offset
     center_freq1: '0'
     center_freq10: '0'
     center_freq11: '0'
@@ -1162,12 +1162,13 @@ blocks:
     bus_structure: null
     coordinate: [748, 317]
     rotation: 0
-    state: true
+    state: disabled
 
 connections:
 - [analog_quadrature_demod_cf_0, '0', blocks_sub_xx_0, '0']
 - [analog_quadrature_demod_cf_0, '0', single_pole_iir_filter_xx_0, '0']
 - [analog_simple_squelch_cc_0, '0', digital_gmsk_demod_0, '0']
+- [analog_simple_squelch_cc_1, '0', analog_quadrature_demod_cf_0, '0']
 - [analog_simple_squelch_cc_1, '0', freq_xlating_fir_filter_xxx_0, '0']
 - [analog_simple_squelch_cc_1, '0', freq_xlating_fir_filter_xxx_0_0, '0']
 - [blocks_sub_xx_0, '0', digital_clock_recovery_mm_xx_0, '0']
